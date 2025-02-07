@@ -20,6 +20,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -45,9 +46,7 @@ fun PlayerScreen(
     onTrackRemove: (Int) -> Unit,
     onAddTrack: () -> Unit,
     modifier: Modifier = Modifier
-) = Column(
-    modifier = modifier.background(Color.Blue)
-) {
+) = Column(modifier) {
     AndroidView(
         factory = { context ->
             PlayerView(context).also { playerView ->
@@ -93,7 +92,7 @@ fun Playlist(
     onTrackSelected: (Int) -> Unit,
     onTrackRemove: (Int) -> Unit,
     modifier: Modifier = Modifier
-) = LazyColumn(modifier.background(Color.Red)) {
+) = LazyColumn(modifier) {
     items(tracks) { track ->
         Track(
             title = track.title,
@@ -115,7 +114,7 @@ fun Track(
 ) = Row(
     modifier = modifier
         .background(
-            if (isSelected) Color.DarkGray
+            if (isSelected) Color.DarkGray.copy(alpha = 0.2f)
             else Color.Transparent
         ),
     verticalAlignment = Alignment.CenterVertically,
@@ -128,7 +127,7 @@ fun Track(
     ) {
         Text(
             text = title,
-            color = if (isSelected) Color.White
+            color = if (isSelected) MaterialTheme.colorScheme.primary
             else Color.Black,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Start
