@@ -24,6 +24,7 @@ data class AudioItem(val name: String, val mediaItem: MediaItem)
 class PlayerViewModel @Inject constructor(
     private val metadataReader: MetaDataReader,
     val player: Player,
+    private val playbackEndObserver: PlaybackEndObserver,
 ) : ViewModel() {
 
     private val trackMap = mutableMapOf<Int, AudioItem>()
@@ -46,8 +47,10 @@ class PlayerViewModel @Inject constructor(
         )
 
     init {
+        player.addListener(playbackEndObserver)
         player.prepare()
         playTrackOnSelectionChanged()
+        playNextTrackOnPlaybackEnded()
     }
 
     fun onTrackSelected(id: Int) {
@@ -69,6 +72,7 @@ class PlayerViewModel @Inject constructor(
         val trackId = newTrackId()
         trackMap[trackId] = createAudioItem(uri)
         playListFlow.update { playListFlow.value + trackId }
+        if(selectedTrackFlow.value == null) selectedTrackFlow.update { trackId }
     }
 
     private fun playTrackOnSelectionChanged() = viewModelScope.launch {
@@ -79,6 +83,22 @@ class PlayerViewModel @Inject constructor(
                 player.setMediaItem(it)
                 player.play()
             }.collect()
+    }
+
+    private fun playNextTrackOnPlaybackEnded() = viewModelScope.launch {
+        playbackEndObserver.playbackEndedSharedFlow.collect {
+            playNextTrackInQueue()
+        }
+    }
+
+    private fun playNextTrackInQueue() {
+        val index = playListFlow.value.indexOf(selectedTrackFlow.value)
+        if (index == playListFlow.value.lastIndex) {
+            selectedTrackFlow.update { null }
+            player.removeMediaItem(0)
+        } else {
+            selectedTrackFlow.update { playListFlow.value[index + 1] }
+        }
     }
 
     private fun newTrackId(): Int =
