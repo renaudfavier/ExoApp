@@ -60,12 +60,10 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun onTrackRemove(id: Int) {
-        trackMap.remove(id)
         if (selectedTrackFlow.value == id) {
-            selectedTrackFlow.update { null }
-            player.stop()
-            player.removeMediaItem(0)
+            player.clearMediaItems()
         }
+        trackMap.remove(id)
         playListFlow.update { playListFlow.value.filter { it != id } }
     }
 
@@ -94,7 +92,7 @@ class PlayerViewModel @Inject constructor(
         val index = playListFlow.value.indexOf(selectedTrackFlow.value)
         if (index == playListFlow.value.lastIndex) {
             selectedTrackFlow.update { null }
-            player.removeMediaItem(0)
+            player.clearMediaItems()
         } else {
             selectedTrackFlow.update { playListFlow.value[index + 1] }
         }

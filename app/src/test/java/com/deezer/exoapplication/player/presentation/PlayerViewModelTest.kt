@@ -27,8 +27,6 @@ import kotlin.test.assertNull
 class PlayerViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
-
-
     private lateinit var metadataReader: MetaDataReader
     private lateinit var player: Player
 
@@ -155,7 +153,7 @@ class PlayerViewModelTest {
     }
 
     @Test
-    fun `when user removes a playing track, player is stopped`() = runTest {
+    fun `when user removes a sole playing track, player medias are cleared`() = runTest {
         // Create an empty collector for the StateFlow
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect {}
@@ -176,7 +174,7 @@ class PlayerViewModelTest {
 
         //Then
         assert(viewModel.uiState.value.isEmpty())
-        verify { player.stop() }
+        verify { player.clearMediaItems() }
     }
 
     @Test
@@ -259,9 +257,6 @@ class PlayerViewModelTest {
 
         //Then
         assertNull(viewModel.uiState.value.find { it.isSelected })
-        verify(exactly = 1) { player.removeMediaItem(0) }
+        verify(exactly = 1) { player.clearMediaItems() }
     }
-
-
 }
-
