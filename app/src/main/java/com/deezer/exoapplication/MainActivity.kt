@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     PlayerScreen(
+                        player = viewModel.player,
                         tracks = tracks,
                         onTrackSelected = { id -> viewModel.onTrackSelected(id) },
                         onTrackRemove = { id -> viewModel.onTrackRemove(id) },
