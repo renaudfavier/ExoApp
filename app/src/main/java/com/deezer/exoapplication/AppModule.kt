@@ -1,6 +1,8 @@
 package com.deezer.exoapplication
 
 import android.app.Application
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import com.deezer.exoapplication.player.MetaDataReader
 import com.deezer.exoapplication.player.MetadataReaderImpl
 import dagger.Module
@@ -12,6 +14,13 @@ import dagger.hilt.android.scopes.ViewModelScoped
 @Module
 @InstallIn(ViewModelComponent::class)
 object AppModule {
+
+    @Provides
+    @ViewModelScoped
+    fun provideVideoPlayer(app: Application): Player {
+        return ExoPlayer.Builder(app)
+            .build()
+    }
 
     @Provides
     @ViewModelScoped
