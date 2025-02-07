@@ -1,10 +1,12 @@
-package com.deezer.exoapplication.player
+package com.deezer.exoapplication.player.presentation
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import com.deezer.exoapplication.core.data.MetaDataReader
+import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,6 +33,13 @@ class PlayerViewModel @Inject constructor(
     private val selectedTrackFlow = MutableStateFlow<Int?>(null)
     private val playListFlow = MutableStateFlow<List<Int>>(emptyList())
 
+    init {
+        player.addListener(playbackEndObserver)
+        player.prepare()
+        playTrackOnSelectionChanged()
+        playNextTrackOnPlaybackEnded()
+    }
+
     val uiState = playListFlow
         .combine(selectedTrackFlow) { playList, selectedTrack ->
             playList.map { id ->
@@ -45,13 +54,6 @@ class PlayerViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
-
-    init {
-        player.addListener(playbackEndObserver)
-        player.prepare()
-        playTrackOnSelectionChanged()
-        playNextTrackOnPlaybackEnded()
-    }
 
     fun onTrackSelected(id: Int) {
         selectedTrackFlow.update { id }

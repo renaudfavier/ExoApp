@@ -13,8 +13,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.deezer.exoapplication.player.PlayerScreen
-import com.deezer.exoapplication.player.PlayerViewModel
+import com.deezer.exoapplication.player.presentation.PlayerScreen
+import com.deezer.exoapplication.player.presentation.PlayerViewModel
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
 import dagger.hilt.android.AndroidEntryPoint
 

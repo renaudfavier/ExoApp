@@ -1,4 +1,4 @@
-package com.deezer.exoapplication.player
+package com.deezer.exoapplication.player.presentation
 
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
@@ -32,10 +32,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
+import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
 
-
-data class TrackUiModel(val id: Int, val title: String, val isSelected: Boolean)
 
 @OptIn(UnstableApi::class)
 @Composable
