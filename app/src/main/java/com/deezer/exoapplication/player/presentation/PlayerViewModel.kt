@@ -10,13 +10,13 @@ import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -26,15 +26,15 @@ data class AudioItem(val name: String, val mediaItem: MediaItem)
 class PlayerViewModel @Inject constructor(
     private val metadataReader: MetaDataReader,
     val player: Player,
-    private val playbackEndObserver: PlaybackEndObserver,
+    playbackObserver: PlaybackStateObserver
 ) : ViewModel() {
 
     private val trackMap = mutableMapOf<Int, AudioItem>()
     private val selectedTrackFlow = MutableStateFlow<Int?>(null)
     private val playListFlow = MutableStateFlow<List<Int>>(emptyList())
+    private val playerPlaybackStateFlow = playbackObserver.playerPlaybackStateFlow
 
     init {
-        player.addListener(playbackEndObserver)
         player.prepare()
         playTrackOnSelectionChanged()
         playNextTrackOnPlaybackEnded()
@@ -74,24 +74,21 @@ class PlayerViewModel @Inject constructor(
         val trackId = newTrackId()
         trackMap[trackId] = createAudioItem(uri)
         playListFlow.update { playListFlow.value + trackId }
-        if(selectedTrackFlow.value == null) selectedTrackFlow.update { trackId }
+        if (selectedTrackFlow.value == null) selectedTrackFlow.update { trackId }
     }
 
-    private fun playTrackOnSelectionChanged() = viewModelScope.launch {
-        selectedTrackFlow
-            .mapNotNull {
-                trackMap[it]?.mediaItem
-            }.onEach {
-                player.setMediaItem(it)
-                player.play()
-            }.collect()
-    }
+    private fun playTrackOnSelectionChanged() = selectedTrackFlow
+        .mapNotNull {
+            trackMap[it]?.mediaItem
+        }.onEach {
+            player.setMediaItem(it)
+            player.play()
+        }.launchIn(viewModelScope)
 
-    private fun playNextTrackOnPlaybackEnded() = viewModelScope.launch {
-        playbackEndObserver.playbackEndedSharedFlow.collect {
-            playNextTrackInQueue()
-        }
-    }
+    private fun playNextTrackOnPlaybackEnded() = playerPlaybackStateFlow
+        .filter { it == Player.STATE_ENDED }
+        .onEach { playNextTrackInQueue() }
+        .launchIn(viewModelScope)
 
     private fun playNextTrackInQueue() {
         val index = playListFlow.value.indexOf(selectedTrackFlow.value)
