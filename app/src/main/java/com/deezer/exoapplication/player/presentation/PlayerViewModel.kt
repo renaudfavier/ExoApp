@@ -6,8 +6,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import com.deezer.exoapplication.core.data.MetaDataReader
-import com.deezer.exoapplication.core.domain.model.TrackId
+import com.deezer.exoapplication.player.domain.model.Track
 import com.deezer.exoapplication.player.data.PlaybackStateObserver
+import com.deezer.exoapplication.player.domain.model.TrackId
 import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,16 +20,14 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 import javax.inject.Inject
-import kotlin.random.Random
-
-data class Track(val name: String, val mediaItem: MediaItem)
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    private val metadataReader: MetaDataReader,
     val player: Player,
-    playbackObserver: PlaybackStateObserver
+    playbackObserver: PlaybackStateObserver,
+    private val metadataReader: MetaDataReader,
 ) : ViewModel() {
 
     private val trackMap = mutableMapOf<TrackId, Track>()
@@ -76,18 +75,19 @@ class PlayerViewModel @Inject constructor(
         playlistFlow.update { playlist.filter { it != id } }
     }
 
-        val trackId = newTrackId()
-        trackMap[trackId] = createTrack(uri)
-        playlistFlow.update { playlist + trackId }
-        if (selectedTrackId == null) selectedTrackIdFlow.update { trackId }
     fun onTrackAdded(uri: Uri) {
+        val track = createTrack(uri)
+        trackMap[track.id] = track
+        playlistFlow.update { playlist + track.id }
+        if (selectedTrackId == null) selectedTrackIdFlow.update { track.id }
     }
 
     private fun playTrackOnSelectionChanged() = selectedTrackIdFlow
         .mapNotNull {
-            trackMap[it]?.mediaItem
+            trackMap[it]?.uri
         }.onEach {
-            player.setMediaItem(it)
+            val mediaItem = MediaItem.fromUri(it)
+            player.setMediaItem(mediaItem)
             player.play()
         }.launchIn(viewModelScope)
 
@@ -106,14 +106,12 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    private fun newTrackId(): TrackId =
-        Random.nextInt().takeUnless { it in trackMap } ?: newTrackId()
-
-    private fun createTrack(uri: Uri): Track {
-        val metadata = metadataReader.getMetaDataFromUri(uri)
-        val name = metadata?.fileName ?: "No Name"
-        return Track(name, MediaItem.fromUri(uri))
-    }
+    private fun createTrack(uri: Uri) =
+        Track(
+            id = UUID.randomUUID(),
+            name = metadataReader.getMetaDataFromUri(uri)?.fileName ?: "No Name",
+            uri = uri.toString()
+        )
 
     override fun onCleared() {
         super.onCleared()

@@ -33,9 +33,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
-import com.deezer.exoapplication.core.domain.model.TrackId
+import com.deezer.exoapplication.player.domain.model.TrackId
 import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
+import java.util.UUID
 
 
 @OptIn(UnstableApi::class)
@@ -149,10 +150,10 @@ fun Track(
 private fun PlayerScreenPreview() {
 
     val fakeTracks = listOf(
-        TrackUiModel(1, "Track 1", false),
-        TrackUiModel(2, "Track 2", false),
-        TrackUiModel(3, "Track 3", true),
-        TrackUiModel(4, "Track 4", false),
+        TrackUiModel(UUID.randomUUID(), "Track 1", false),
+        TrackUiModel(UUID.randomUUID(), "Track 2", false),
+        TrackUiModel(UUID.randomUUID(), "Track 3", true),
+        TrackUiModel(UUID.randomUUID(), "Track 4", false),
     )
 
     ExoAppTheme {
