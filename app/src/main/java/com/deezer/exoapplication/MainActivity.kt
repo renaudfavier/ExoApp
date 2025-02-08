@@ -32,8 +32,8 @@ class MainActivity : ComponentActivity() {
 
                     val singleAudioFilePickerLauncher = rememberLauncherForActivityResult(
                         contract = ActivityResultContracts.GetContent(),
-                    ) {
-                        viewModel.onTrackAdd(it)
+                    ) { uri ->
+                        uri?.let { viewModel.onTrackAdded(uri) }
                     }
 
                     PlayerScreen(

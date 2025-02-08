@@ -5,6 +5,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import com.deezer.exoapplication.core.data.MetaDataReader
 import com.deezer.exoapplication.core.domain.model.MetaData
+import com.deezer.exoapplication.player.data.PlaybackStateObserver
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -77,7 +78,7 @@ class PlayerViewModelTest {
         every { metadataReader.getMetaDataFromUri(uri) }.returns(metadata)
 
         //When
-        viewModel.onTrackAdd(uri)
+        viewModel.onTrackAdded(uri)
 
         testScheduler.advanceUntilIdle()
 
@@ -110,8 +111,8 @@ class PlayerViewModelTest {
         every { metadataReader.getMetaDataFromUri(newTrackUri) }.returns(newTrackMetadata)
 
         //When
-        uris.forEach { viewModel.onTrackAdd(it) }
-        viewModel.onTrackAdd(newTrackUri)
+        uris.forEach { viewModel.onTrackAdded(it) }
+        viewModel.onTrackAdded(newTrackUri)
 
         testScheduler.advanceUntilIdle()
 
@@ -138,7 +139,7 @@ class PlayerViewModelTest {
                         .returns(MetaData("track_$index.mp3"))
                 }
         }
-        uris.forEach { viewModel.onTrackAdd(it) }
+        uris.forEach { viewModel.onTrackAdded(it) }
         testScheduler.advanceUntilIdle()
 
         //When
@@ -163,7 +164,7 @@ class PlayerViewModelTest {
         val uri = mockk<Uri>(relaxed = true)
         val metadata = MetaData("test.mp3")
         every { metadataReader.getMetaDataFromUri(uri) }.returns(metadata)
-        viewModel.onTrackAdd(uri)
+        viewModel.onTrackAdded(uri)
         testScheduler.advanceUntilIdle()
 
         //When
@@ -192,7 +193,7 @@ class PlayerViewModelTest {
                         .returns(MetaData("track_$index.mp3"))
                 }
         }
-        uris.forEach { viewModel.onTrackAdd(it) }
+        uris.forEach { viewModel.onTrackAdded(it) }
         testScheduler.advanceUntilIdle()
 
         //When
@@ -222,7 +223,7 @@ class PlayerViewModelTest {
                         .returns(MetaData("track_$index.mp3"))
                 }
         }
-        uris.forEach { viewModel.onTrackAdd(it) }
+        uris.forEach { viewModel.onTrackAdded(it) }
         testScheduler.advanceUntilIdle()
 
         //When
@@ -250,7 +251,7 @@ class PlayerViewModelTest {
         every { metadataReader.getMetaDataFromUri(uri) }.returns(metadata)
 
         //When
-        viewModel.onTrackAdd(uri)
+        viewModel.onTrackAdded(uri)
         testScheduler.advanceUntilIdle()
         playbackStateFlow.emit(Player.STATE_ENDED)
         testScheduler.advanceUntilIdle()

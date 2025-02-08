@@ -75,12 +75,11 @@ class PlayerViewModel @Inject constructor(
         playlistFlow.update { playlist.filter { it != id } }
     }
 
-    fun onTrackAdd(uri: Uri?) {
-        uri ?: return
         val trackId = newTrackId()
         trackMap[trackId] = createTrack(uri)
         playlistFlow.update { playlist + trackId }
         if (selectedTrackId == null) selectedTrackIdFlow.update { trackId }
+    fun onTrackAdded(uri: Uri) {
     }
 
     private fun playTrackOnSelectionChanged() = selectedTrackIdFlow
