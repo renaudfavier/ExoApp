@@ -1,4 +1,4 @@
-package com.deezer.exoapplication.player.presentation
+package com.deezer.exoapplication.player.data
 
 import androidx.media3.common.Player
 import kotlinx.coroutines.flow.MutableStateFlow

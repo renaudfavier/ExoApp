@@ -7,6 +7,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import com.deezer.exoapplication.core.data.MetaDataReader
 import com.deezer.exoapplication.core.domain.model.TrackId
+import com.deezer.exoapplication.player.data.PlaybackStateObserver
 import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
