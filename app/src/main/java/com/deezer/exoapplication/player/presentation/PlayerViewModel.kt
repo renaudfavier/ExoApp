@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import com.deezer.exoapplication.core.data.MetaDataReader
+import com.deezer.exoapplication.core.domain.model.TrackId
 import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +21,7 @@ import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import kotlin.random.Random
 
-data class AudioItem(val name: String, val mediaItem: MediaItem)
+data class Track(val name: String, val mediaItem: MediaItem)
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
@@ -29,9 +30,14 @@ class PlayerViewModel @Inject constructor(
     playbackObserver: PlaybackStateObserver
 ) : ViewModel() {
 
-    private val trackMap = mutableMapOf<Int, AudioItem>()
-    private val selectedTrackFlow = MutableStateFlow<Int?>(null)
-    private val playListFlow = MutableStateFlow<List<Int>>(emptyList())
+    private val trackMap = mutableMapOf<TrackId, Track>()
+
+    private val selectedTrackIdFlow = MutableStateFlow<TrackId?>(null)
+    private val selectedTrackId get() = selectedTrackIdFlow.value
+
+    private val playlistFlow = MutableStateFlow<List<TrackId>>(emptyList())
+    private val playlist get() = playlistFlow.value
+
     private val playerPlaybackStateFlow = playbackObserver.playerPlaybackStateFlow
 
     init {
@@ -40,13 +46,13 @@ class PlayerViewModel @Inject constructor(
         playNextTrackOnPlaybackEnded()
     }
 
-    val uiState = playListFlow
-        .combine(selectedTrackFlow) { playList, selectedTrack ->
-            playList.map { id ->
+    val uiState = playlistFlow
+        .combine(selectedTrackIdFlow) { playlist, selectedTrackId ->
+            playlist.map { trackId ->
                 TrackUiModel(
-                    id = id,
-                    title = trackMap[id]?.name ?: "No Name",
-                    isSelected = id == selectedTrack
+                    id = trackId,
+                    title = trackMap[trackId]?.name ?: "No Name",
+                    isSelected = trackId == selectedTrackId
                 )
             }
         }.stateIn(
@@ -55,27 +61,29 @@ class PlayerViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    fun onTrackSelected(id: Int) {
-        selectedTrackFlow.update { id }
+    fun onTrackSelected(id: TrackId) {
+        selectedTrackIdFlow.update { id }
     }
 
-    fun onTrackRemove(id: Int) {
-        if (selectedTrackFlow.value == id) {
+    fun onTrackRemoved(id: TrackId) {
+        if (id == selectedTrackId) {
+            //clearMediaItems() triggers a Player.STATE_END event that we observe and call playNextTrackInQueue()
+            //So the track to remove will no longer be selected
             player.clearMediaItems()
         }
         trackMap.remove(id)
-        playListFlow.update { playListFlow.value.filter { it != id } }
+        playlistFlow.update { playlist.filter { it != id } }
     }
 
     fun onTrackAdd(uri: Uri?) {
         uri ?: return
         val trackId = newTrackId()
-        trackMap[trackId] = createAudioItem(uri)
-        playListFlow.update { playListFlow.value + trackId }
-        if (selectedTrackFlow.value == null) selectedTrackFlow.update { trackId }
+        trackMap[trackId] = createTrack(uri)
+        playlistFlow.update { playlist + trackId }
+        if (selectedTrackId == null) selectedTrackIdFlow.update { trackId }
     }
 
-    private fun playTrackOnSelectionChanged() = selectedTrackFlow
+    private fun playTrackOnSelectionChanged() = selectedTrackIdFlow
         .mapNotNull {
             trackMap[it]?.mediaItem
         }.onEach {
@@ -89,22 +97,22 @@ class PlayerViewModel @Inject constructor(
         .launchIn(viewModelScope)
 
     private fun playNextTrackInQueue() {
-        val index = playListFlow.value.indexOf(selectedTrackFlow.value)
-        if (index == playListFlow.value.lastIndex) {
-            selectedTrackFlow.update { null }
+        val selectedTrackIndex = playlist.indexOf(selectedTrackId)
+        if (selectedTrackIndex == playlist.lastIndex) {
+            selectedTrackIdFlow.update { null }
             player.clearMediaItems()
         } else {
-            selectedTrackFlow.update { playListFlow.value[index + 1] }
+            selectedTrackIdFlow.update { playlist[selectedTrackIndex + 1] }
         }
     }
 
-    private fun newTrackId(): Int =
+    private fun newTrackId(): TrackId =
         Random.nextInt().takeUnless { it in trackMap } ?: newTrackId()
 
-    private fun createAudioItem(uri: Uri): AudioItem {
+    private fun createTrack(uri: Uri): Track {
         val metadata = metadataReader.getMetaDataFromUri(uri)
         val name = metadata?.fileName ?: "No Name"
-        return AudioItem(name, MediaItem.fromUri(uri))
+        return Track(name, MediaItem.fromUri(uri))
     }
 
     override fun onCleared() {

@@ -143,7 +143,7 @@ class PlayerViewModelTest {
 
         //When
         val trackToRemove = viewModel.uiState.value[7]
-        viewModel.onTrackRemove(trackToRemove.id)
+        viewModel.onTrackRemoved(trackToRemove.id)
 
         testScheduler.advanceUntilIdle()
 
@@ -168,7 +168,7 @@ class PlayerViewModelTest {
 
         //When
         val trackToRemove = viewModel.uiState.value.first()
-        viewModel.onTrackRemove(trackToRemove.id)
+        viewModel.onTrackRemoved(trackToRemove.id)
 
         testScheduler.advanceUntilIdle()
 

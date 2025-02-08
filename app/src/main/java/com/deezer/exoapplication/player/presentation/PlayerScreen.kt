@@ -33,6 +33,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
+import com.deezer.exoapplication.core.domain.model.TrackId
 import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
 
@@ -42,8 +43,8 @@ import com.deezer.exoapplication.ui.theme.ExoAppTheme
 fun PlayerScreen(
     player: Player?,
     tracks: List<TrackUiModel>,
-    onTrackSelected: (Int) -> Unit,
-    onTrackRemove: (Int) -> Unit,
+    onTrackSelected: (TrackId) -> Unit,
+    onTrackRemoved: (TrackId) -> Unit,
     onAddTrack: () -> Unit,
     modifier: Modifier = Modifier
 ) = Column(modifier) {
@@ -67,7 +68,7 @@ fun PlayerScreen(
         Playlist(
             tracks = tracks,
             onTrackSelected = onTrackSelected,
-            onTrackRemove = onTrackRemove,
+            onTrackRemove = onTrackRemoved,
             modifier = Modifier.fillMaxSize()
         )
 
@@ -89,8 +90,8 @@ fun PlayerScreen(
 @Composable
 fun Playlist(
     tracks: List<TrackUiModel>,
-    onTrackSelected: (Int) -> Unit,
-    onTrackRemove: (Int) -> Unit,
+    onTrackSelected: (TrackId) -> Unit,
+    onTrackRemove: (TrackId) -> Unit,
     modifier: Modifier = Modifier
 ) = LazyColumn(modifier) {
     items(tracks) { track ->
@@ -158,7 +159,7 @@ private fun PlayerScreenPreview() {
         PlayerScreen(
             player = null,
             tracks = fakeTracks,
-            onTrackRemove = {},
+            onTrackRemoved = {},
             onTrackSelected = {},
             onAddTrack = {},
             modifier = Modifier.fillMaxSize()

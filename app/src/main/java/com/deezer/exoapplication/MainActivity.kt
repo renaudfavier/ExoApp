@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
                         player = viewModel.player,
                         tracks = tracks,
                         onTrackSelected = { id -> viewModel.onTrackSelected(id) },
-                        onTrackRemove = { id -> viewModel.onTrackRemove(id) },
+                        onTrackRemoved = { id -> viewModel.onTrackRemoved(id) },
                         onAddTrack = {
                             singleAudioFilePickerLauncher.launch(input = "audio/*")
                         },
