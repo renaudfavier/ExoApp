@@ -3,6 +3,10 @@
 
 This project is a small Android application designed to demonstrate a media player queue feature. It provides basic queue management using **StateFlow** for reactive UI updates.
 
+Note : I'm fully aware this is quite over engineered for a simple project like this, and I might have given a stick to beat me with. But I figured going the extra mile would demonstrate my motivation and give material to chat. 
+
+Note 2 : I made it so you can review this code commit per commit like you would do for a pull request.
+
 ## Features
 - **Display the current media queue** alongside the player view.
 - **Playback chaining**: Automatically play the next media in the queue when the current media ends.
@@ -30,7 +34,6 @@ This demo works with local audio files, I used the regular android picker, tap t
 I know that a nice UI was out of the scope of the exercise, but MetaDataReader is there to access the filenames so tracks look better in the queue
 Aside from this small deviation, you'll notice that I took the ugly UI assignment very seriously :)
 
-
 ### Player Playback State Tracking
 A small wrapper around `Player.Listener` exposes a new flow:
 
@@ -38,10 +41,10 @@ A small wrapper around `Player.Listener` exposes a new flow:
 val playerPlaybackStateFlow = playbackObserver.playerPlaybackStateFlow
 ```
 
-This flow tracks the player’s state and helps detect when the current song reaches its end using `onPlaybackStateChanged` with `STATE_ENDED`. While this implementation has some **side effects** (e.g., `clearMedias()` can trigger this event), it worked without introducing any bugs in this exercise.
+This flow tracks the player’s state and helps detect when the current song reaches its end using `onPlaybackStateChanged` with `STATE_ENDED`. While this implementation has some **side effects** (e.g., `Player.clearMedias()` triggers this event), it worked without introducing any bugs in this exercise.
 
 ### Unit Tests
-The project includes a **comprehensive suite of unit tests** for the `PlayerViewModel` to ensure the correctness of state management and playback behavior.
+The project includes a **suite of unit tests** for the `PlayerViewModel` to ensure the correctness of state management and playback behavior.
 
 ### Limitation
 Beside the usage of STATE_ENDED, the app don't support config change, process kill etc.. though it could be easily done by saving the Uris in SavedStateHandle and building the track list flow around it
@@ -50,6 +53,6 @@ Beside the usage of STATE_ENDED, the app don't support config change, process ki
 
 1. Clone the repository
 2. Open in Android Studio
-3. drag & drop the sample mp3 to your emulator
+3. Drag & drop `sample1.mp3` in your emulator
 4. Build and run the project
 5. Run tests using `./gradlew test`
