@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import com.deezer.exoapplication.core.data.MetaDataReader
+import com.deezer.exoapplication.player.data.MediaItemFactory
 import com.deezer.exoapplication.player.domain.model.Track
 import com.deezer.exoapplication.player.data.PlaybackStateObserver
 import com.deezer.exoapplication.player.domain.model.TrackId
@@ -28,6 +29,7 @@ class PlayerViewModel @Inject constructor(
     val player: Player,
     playbackObserver: PlaybackStateObserver,
     private val metadataReader: MetaDataReader,
+    private val mediaItemFactory: MediaItemFactory,
 ) : ViewModel() {
 
     private val trackMap = mutableMapOf<TrackId, Track>()
@@ -86,7 +88,7 @@ class PlayerViewModel @Inject constructor(
         .mapNotNull {
             trackMap[it]?.uri
         }.onEach {
-            val mediaItem = MediaItem.fromUri(it)
+            val mediaItem = mediaItemFactory.createFromUri(it)
             player.setMediaItem(mediaItem)
             player.play()
         }.launchIn(viewModelScope)

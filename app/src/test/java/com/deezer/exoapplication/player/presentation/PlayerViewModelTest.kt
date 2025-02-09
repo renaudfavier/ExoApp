@@ -5,6 +5,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import com.deezer.exoapplication.core.data.MetaDataReader
 import com.deezer.exoapplication.core.domain.model.MetaData
+import com.deezer.exoapplication.player.data.MediaItemFactory
 import com.deezer.exoapplication.player.data.PlaybackStateObserver
 import io.mockk.every
 import io.mockk.mockk
@@ -28,8 +29,9 @@ import kotlin.test.assertNull
 class PlayerViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
-    private lateinit var metadataReader: MetaDataReader
     private lateinit var player: Player
+    private lateinit var metadataReader: MetaDataReader
+    private lateinit var mediaItemFactory: MediaItemFactory
 
     private lateinit var playbackEndObserver: PlaybackStateObserver
     private lateinit var playbackStateFlow: MutableStateFlow<Int>
@@ -42,12 +44,13 @@ class PlayerViewModelTest {
 
         metadataReader = mockk()
         player = mockk(relaxed = true)
+        mediaItemFactory = mockk(relaxed = true)
 
         playbackStateFlow= MutableStateFlow(Player.STATE_IDLE)
         playbackEndObserver = mockk()
         every { playbackEndObserver.playerPlaybackStateFlow }.returns(playbackStateFlow)
 
-        viewModel = PlayerViewModel(metadataReader, player, playbackEndObserver)
+        viewModel = PlayerViewModel(player, playbackEndObserver, metadataReader, mediaItemFactory)
     }
 
     @After
@@ -191,6 +194,8 @@ class PlayerViewModelTest {
                 .also {
                     every { metadataReader.getMetaDataFromUri(it) }
                         .returns(MetaData("track_$index.mp3"))
+                    every { mediaItemFactory.createFromUri(it.toString()) }
+                        .returns(MediaItem.fromUri(it))
                 }
         }
         uris.forEach { viewModel.onTrackAdded(it) }
@@ -221,10 +226,13 @@ class PlayerViewModelTest {
                 .also {
                     every { metadataReader.getMetaDataFromUri(it) }
                         .returns(MetaData("track_$index.mp3"))
+                    every { mediaItemFactory.createFromUri(it.toString()) }
+                        .returns(MediaItem.fromUri(it))
                 }
         }
         uris.forEach { viewModel.onTrackAdded(it) }
         testScheduler.advanceUntilIdle()
+
 
         //When
         playbackStateFlow.emit(Player.STATE_ENDED)
