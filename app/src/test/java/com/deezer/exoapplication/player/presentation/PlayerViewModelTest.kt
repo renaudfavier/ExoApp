@@ -7,6 +7,7 @@ import com.deezer.exoapplication.core.data.MetaDataReader
 import com.deezer.exoapplication.core.domain.model.MetaData
 import com.deezer.exoapplication.player.data.MediaItemFactory
 import com.deezer.exoapplication.player.data.PlaybackStateObserver
+import com.deezer.exoapplication.player.data.TrackFactory
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -32,6 +33,7 @@ class PlayerViewModelTest {
     private lateinit var player: Player
     private lateinit var metadataReader: MetaDataReader
     private lateinit var mediaItemFactory: MediaItemFactory
+    private lateinit var trackFactory: TrackFactory
 
     private lateinit var playbackEndObserver: PlaybackStateObserver
     private lateinit var playbackStateFlow: MutableStateFlow<Int>
@@ -45,12 +47,13 @@ class PlayerViewModelTest {
         metadataReader = mockk()
         player = mockk(relaxed = true)
         mediaItemFactory = mockk(relaxed = true)
+        trackFactory = TrackFactory(metadataReader)
 
         playbackStateFlow= MutableStateFlow(Player.STATE_IDLE)
         playbackEndObserver = mockk()
         every { playbackEndObserver.playerPlaybackStateFlow }.returns(playbackStateFlow)
 
-        viewModel = PlayerViewModel(player, playbackEndObserver, metadataReader, mediaItemFactory)
+        viewModel = PlayerViewModel(player, playbackEndObserver, trackFactory, mediaItemFactory)
     }
 
     @After

@@ -3,12 +3,11 @@ package com.deezer.exoapplication.player.presentation
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import com.deezer.exoapplication.core.data.MetaDataReader
 import com.deezer.exoapplication.player.data.MediaItemFactory
-import com.deezer.exoapplication.player.domain.model.Track
 import com.deezer.exoapplication.player.data.PlaybackStateObserver
+import com.deezer.exoapplication.player.data.TrackFactory
+import com.deezer.exoapplication.player.domain.model.Track
 import com.deezer.exoapplication.player.domain.model.TrackId
 import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,14 +20,13 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     val player: Player,
     playbackObserver: PlaybackStateObserver,
-    private val metadataReader: MetaDataReader,
+    private val trackFactory: TrackFactory,
     private val mediaItemFactory: MediaItemFactory,
 ) : ViewModel() {
 
@@ -78,7 +76,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun onTrackAdded(uri: Uri) {
-        val track = createTrack(uri)
+        val track = trackFactory.createTrack(uri)
         trackMap[track.id] = track
         playlistFlow.update { playlist + track.id }
         if (selectedTrackId == null) selectedTrackIdFlow.update { track.id }
@@ -107,13 +105,6 @@ class PlayerViewModel @Inject constructor(
             selectedTrackIdFlow.update { playlist[selectedTrackIndex + 1] }
         }
     }
-
-    private fun createTrack(uri: Uri) =
-        Track(
-            id = UUID.randomUUID(),
-            name = metadataReader.getMetaDataFromUri(uri)?.fileName ?: "No Name",
-            uri = uri.toString()
-        )
 
     override fun onCleared() {
         super.onCleared()
