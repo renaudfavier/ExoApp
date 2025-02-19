@@ -9,11 +9,12 @@ import com.deezer.exoapplication.player.data.SongEndedRepository
 import com.deezer.exoapplication.player.domain.QueueManager
 import com.deezer.exoapplication.player.domain.TrackRepository
 import com.deezer.exoapplication.player.domain.model.TrackId
-import com.deezer.exoapplication.player.presentation.model.TrackUiModel
+import com.google.common.collect.ImmutableList
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
@@ -27,29 +28,24 @@ class PlayerViewModel @Inject constructor(
     private val trackRepository: TrackRepository,
     private val mediaItemFactory: MediaItemFactory,
     private val queueManager: QueueManager,
+    private val mapper: TrackUiMapper,
 ) : ViewModel() {
 
     val uiState = queueManager.playlistFlow
-        .combine(queueManager.selectedTrackIdFlow) { playlist, selectedTrackId ->
-            playlist.mapNotNull { trackId ->
-                trackRepository.getTrack(trackId).getOrNull()
-            }.map { track ->
-                TrackUiModel(
-                    id = track.id,
-                    title = track.name,
-                    isSelected = track.id == selectedTrackId
-                )
+        .map { playlist ->
+            playlist.mapNotNull { id ->
+                trackRepository.getTrack(id).getOrNull()
             }
-        }
-        .onStart {
+        }.combine(queueManager.selectedTrackIdFlow) { playlist, selectedTrackId ->
+            mapper.map(playlist, selectedTrackId)
+        }.onStart {
             player.prepare()
             reactOnSelectedTrackChanged()
             playNextTrackOnSongEnded()
-        }
-        .stateIn(
+        }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
+            initialValue = ImmutableList.of()
         )
 
     fun onTrackSelected(id: TrackId) = viewModelScope.launch {
@@ -62,7 +58,7 @@ class PlayerViewModel @Inject constructor(
 
     fun onTrackAdded(uri: Uri) = viewModelScope.launch {
         trackRepository.addTrack(uri).fold(
-            onSuccess = { queueManager.addTrack(it) },
+            onSuccess = { trackId -> queueManager.addTrack(trackId) },
             onFailure = { TODO() }
         )
     }

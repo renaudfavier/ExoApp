@@ -36,14 +36,14 @@ import androidx.media3.ui.PlayerView
 import com.deezer.exoapplication.player.domain.model.TrackId
 import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
+import com.google.common.collect.ImmutableList
 import java.util.UUID
-
 
 @OptIn(UnstableApi::class)
 @Composable
 fun PlayerScreen(
     player: Player?,
-    tracks: List<TrackUiModel>,
+    tracks: ImmutableList<TrackUiModel>,
     onTrackSelected: (TrackId) -> Unit,
     onTrackRemoved: (TrackId) -> Unit,
     onAddTrack: () -> Unit,
@@ -86,7 +86,6 @@ fun PlayerScreen(
         }
     }
 }
-
 
 @Composable
 fun Playlist(
@@ -142,14 +141,13 @@ fun Track(
             contentDescription = "Clear",
         )
     }
-
 }
 
 @Preview
 @Composable
 private fun PlayerScreenPreview() {
 
-    val fakeTracks = listOf(
+    val fakeTracks = ImmutableList.of(
         TrackUiModel(UUID.randomUUID(), "Track 1", false),
         TrackUiModel(UUID.randomUUID(), "Track 2", false),
         TrackUiModel(UUID.randomUUID(), "Track 3", true),
