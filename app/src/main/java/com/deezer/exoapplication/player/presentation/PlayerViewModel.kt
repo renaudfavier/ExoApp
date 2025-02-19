@@ -7,47 +7,33 @@ import androidx.media3.common.Player
 import com.deezer.exoapplication.player.data.MediaItemFactory
 import com.deezer.exoapplication.player.data.SongEndedRepository
 import com.deezer.exoapplication.player.data.TrackFactory
+import com.deezer.exoapplication.player.domain.QueueManager
 import com.deezer.exoapplication.player.domain.model.Track
 import com.deezer.exoapplication.player.domain.model.TrackId
 import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     val player: Player,
-    songEndedRepository: SongEndedRepository,
+    private val songEndedRepository: SongEndedRepository,
     private val trackFactory: TrackFactory,
     private val mediaItemFactory: MediaItemFactory,
+    private val queueManager: QueueManager,
 ) : ViewModel() {
 
     private val trackMap = mutableMapOf<TrackId, Track>()
 
-    private val selectedTrackIdFlow = MutableStateFlow<TrackId?>(null)
-    private val selectedTrackId get() = selectedTrackIdFlow.value
-
-    private val playlistFlow = MutableStateFlow<List<TrackId>>(emptyList())
-    private val playlist get() = playlistFlow.value
-
-    init {
-        player.prepare()
-        playTrackOnSelectionChanged()
-        songEndedRepository
-            .observeSongEnded()
-            .onEach { playNextTrackInQueue() }
-            .launchIn(viewModelScope)
-    }
-
-    val uiState = playlistFlow
-        .combine(selectedTrackIdFlow) { playlist, selectedTrackId ->
+    val uiState = queueManager.playlistFlow
+        .combine(queueManager.selectedTrackIdFlow) { playlist, selectedTrackId ->
             playlist.map { trackId ->
                 TrackUiModel(
                     id = trackId,
@@ -55,51 +41,54 @@ class PlayerViewModel @Inject constructor(
                     isSelected = trackId == selectedTrackId
                 )
             }
-        }.stateIn(
+        }
+        .onStart {
+            player.prepare()
+            reactOnSelectedTrackChanged()
+            playNextTrackOnSongEnded()
+        }
+        .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
-    fun onTrackSelected(id: TrackId) {
-        selectedTrackIdFlow.update { id }
+    fun onTrackSelected(id: TrackId) = viewModelScope.launch {
+        queueManager.selectTrack(id)
     }
 
-    fun onTrackRemoved(id: TrackId) {
-        if (id == selectedTrackId) {
-            //clearMediaItems() triggers a Player.STATE_END event that we observe and call playNextTrackInQueue()
-            //So the track to remove will no longer be selected
-            player.clearMediaItems()
-        }
+    fun onTrackRemoved(id: TrackId) = viewModelScope.launch {
         trackMap.remove(id)
-        playlistFlow.update { playlist.filter { it != id } }
+        queueManager.removeTrack(id)
     }
 
-    fun onTrackAdded(uri: Uri) {
+    fun onTrackAdded(uri: Uri) = viewModelScope.launch {
         val track = trackFactory.createTrack(uri)
         trackMap[track.id] = track
-        playlistFlow.update { playlist + track.id }
-        if (selectedTrackId == null) selectedTrackIdFlow.update { track.id }
+        queueManager.addTrack(track.id)
     }
 
-    private fun playTrackOnSelectionChanged() = selectedTrackIdFlow
-        .mapNotNull {
-            trackMap[it]?.uri
-        }.onEach {
-            val mediaItem = mediaItemFactory.createFromUri(it)
-            player.setMediaItem(mediaItem)
-            player.play()
+    private fun reactOnSelectedTrackChanged() = queueManager
+        .selectedTrackIdFlow
+        .onEach { trackId ->
+            if(trackId == null) {
+                player.clearMediaItems()
+            } else {
+                playTrack(trackId)
+            }
         }.launchIn(viewModelScope)
 
-    private fun playNextTrackInQueue() {
-        val selectedTrackIndex = playlist.indexOf(selectedTrackId)
-        if (selectedTrackIndex == playlist.lastIndex) {
-            selectedTrackIdFlow.update { null }
-            player.clearMediaItems()
-        } else {
-            selectedTrackIdFlow.update { playlist[selectedTrackIndex + 1] }
-        }
+    private fun playTrack(trackId: TrackId) {
+        val track = trackMap[trackId] ?: return
+        val mediaItem = mediaItemFactory.createFromUri(track.uri)
+        player.setMediaItem(mediaItem)
+        player.play()
     }
+
+    private fun playNextTrackOnSongEnded() = songEndedRepository
+        .observeSongEnded()
+        .onEach { queueManager.next() }
+        .launchIn(viewModelScope)
 
     override fun onCleared() {
         super.onCleared()
