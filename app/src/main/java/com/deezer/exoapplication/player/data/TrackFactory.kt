@@ -10,7 +10,7 @@ class TrackFactory @Inject constructor(
     private val metaDataReader: MetaDataReader
 ) {
     fun createTrack(uri: Uri) = Track(
-        id = UUID.randomUUID(),
+        id = UUID.randomUUID().toString(),
         name = metaDataReader.getMetaDataFromUri(uri)?.fileName ?: "No Name",
         uri = uri.toString()
     )

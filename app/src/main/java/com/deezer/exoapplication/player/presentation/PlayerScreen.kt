@@ -37,7 +37,6 @@ import com.deezer.exoapplication.player.domain.model.TrackId
 import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
 import com.google.common.collect.ImmutableList
-import java.util.UUID
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -148,10 +147,10 @@ fun Track(
 private fun PlayerScreenPreview() {
 
     val fakeTracks = ImmutableList.of(
-        TrackUiModel(UUID.randomUUID(), "Track 1", false),
-        TrackUiModel(UUID.randomUUID(), "Track 2", false),
-        TrackUiModel(UUID.randomUUID(), "Track 3", true),
-        TrackUiModel(UUID.randomUUID(), "Track 4", false),
+        TrackUiModel("", "Track 1", false),
+        TrackUiModel("", "Track 2", false),
+        TrackUiModel("", "Track 3", true),
+        TrackUiModel("", "Track 4", false),
     )
 
     ExoAppTheme {
