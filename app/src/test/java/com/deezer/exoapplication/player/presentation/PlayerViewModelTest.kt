@@ -3,17 +3,18 @@ package com.deezer.exoapplication.player.presentation
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import app.cash.turbine.test
 import com.deezer.exoapplication.core.data.MetaDataReader
 import com.deezer.exoapplication.core.domain.model.MetaData
 import com.deezer.exoapplication.player.data.MediaItemFactory
-import com.deezer.exoapplication.player.data.PlaybackStateObserver
+import com.deezer.exoapplication.player.data.SongEndedRepository
 import com.deezer.exoapplication.player.data.TrackFactory
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -35,8 +36,8 @@ class PlayerViewModelTest {
     private lateinit var mediaItemFactory: MediaItemFactory
     private lateinit var trackFactory: TrackFactory
 
-    private lateinit var playbackEndObserver: PlaybackStateObserver
-    private lateinit var playbackStateFlow: MutableStateFlow<Int>
+    private lateinit var songEndedRepository: SongEndedRepository
+    private lateinit var songEndedFlow: MutableSharedFlow<Unit>
 
     private lateinit var viewModel: PlayerViewModel
 
@@ -49,11 +50,11 @@ class PlayerViewModelTest {
         mediaItemFactory = mockk(relaxed = true)
         trackFactory = TrackFactory(metadataReader)
 
-        playbackStateFlow= MutableStateFlow(Player.STATE_IDLE)
-        playbackEndObserver = mockk()
-        every { playbackEndObserver.playerPlaybackStateFlow }.returns(playbackStateFlow)
+        songEndedRepository = mockk(relaxed = true)
+        songEndedFlow = MutableSharedFlow()
+        every { songEndedRepository.observeSongEnded() }.returns(songEndedFlow)
 
-        viewModel = PlayerViewModel(player, playbackEndObserver, trackFactory, mediaItemFactory)
+        viewModel = PlayerViewModel(player, songEndedRepository, trackFactory, mediaItemFactory)
     }
 
     @After
@@ -217,58 +218,60 @@ class PlayerViewModelTest {
     }
 
     @Test
-    fun `when a track ends, next track is played if possible`() = runTest {
-        // Create an empty collector for the StateFlow
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.uiState.collect {}
+    fun `when a track ends, next track is played2`() = runTest {
+        viewModel.uiState.test {
+            assert(awaitItem().isEmpty())
+
+            //Given
+            val uris = List(15) { index ->
+                mockk<Uri>(relaxed = true)
+                    .also {
+                        every { metadataReader.getMetaDataFromUri(it) }
+                            .returns(MetaData("track_$index.mp3"))
+                        every { mediaItemFactory.createFromUri(it.toString()) }
+                            .returns(MediaItem.fromUri(it))
+                    }
+            }
+            uris.forEach { viewModel.onTrackAdded(it) }
+            testScheduler.advanceUntilIdle()
+
+            val tracksBeforeSongEnded = awaitItem()
+            assert(tracksBeforeSongEnded[0].isSelected)
+
+            songEndedFlow.emit(Unit)
+
+            val tracksAfterSongEnded = awaitItem()
+            assertEquals("track_1.mp3", tracksAfterSongEnded.find { it.isSelected}?.title)
+            verify(exactly = 1) { player.setMediaItem(MediaItem.fromUri(uris[1])) }
+            verify(exactly = 2) { player.setMediaItem(any()) }
+            verify(exactly = 2) { player.play() }
+
+            songEndedFlow.emit(Unit)
+            assertEquals("track_2.mp3", awaitItem().find { it.isSelected}?.title)
         }
-
-        //Given
-        val uris = List(15) { index ->
-            mockk<Uri>(relaxed = true)
-                .also {
-                    every { metadataReader.getMetaDataFromUri(it) }
-                        .returns(MetaData("track_$index.mp3"))
-                    every { mediaItemFactory.createFromUri(it.toString()) }
-                        .returns(MediaItem.fromUri(it))
-                }
-        }
-        uris.forEach { viewModel.onTrackAdded(it) }
-        testScheduler.advanceUntilIdle()
-
-
-        //When
-        playbackStateFlow.emit(Player.STATE_ENDED)
-
-        testScheduler.advanceUntilIdle()
-
-        //Then
-        assert(viewModel.uiState.value[1].isSelected)
-        verify(exactly = 1) { player.setMediaItem(MediaItem.fromUri(uris[1])) }
-        verify(exactly = 2) { player.setMediaItem(any()) }
-        verify(exactly = 2) { player.play() }
     }
 
     @Test
-    fun `when the last track ends, its  removed from the player items`() = runTest {
-        // Create an empty collector for the StateFlow
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.uiState.collect {}
+    fun `when the last track ends, it is no longer selected, and player is cleared`() = runTest {
+        viewModel.uiState.test {
+            assert(awaitItem().isEmpty())
+
+            //Given
+            val uri = mockk<Uri>(relaxed = true)
+            val metadata = MetaData("test.mp3")
+            every { metadataReader.getMetaDataFromUri(uri) }.returns(metadata)
+
+            //When
+            viewModel.onTrackAdded(uri)
+
+            val tracksBeforeSongEnded = awaitItem()
+            assert(tracksBeforeSongEnded[0].isSelected)
+
+            songEndedFlow.emit(Unit)
+
+            val tracksAfterSongEnded = awaitItem()
+            assertNull(tracksAfterSongEnded.find { it.isSelected})
+            verify(exactly = 1) { player.clearMediaItems() }
         }
-
-        //Given
-        val uri = mockk<Uri>(relaxed = true)
-        val metadata = MetaData("test.mp3")
-        every { metadataReader.getMetaDataFromUri(uri) }.returns(metadata)
-
-        //When
-        viewModel.onTrackAdded(uri)
-        testScheduler.advanceUntilIdle()
-        playbackStateFlow.emit(Player.STATE_ENDED)
-        testScheduler.advanceUntilIdle()
-
-        //Then
-        assertNull(viewModel.uiState.value.find { it.isSelected })
-        verify(exactly = 1) { player.clearMediaItems() }
     }
 }

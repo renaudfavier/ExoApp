@@ -1,23 +1,25 @@
 package com.deezer.exoapplication.player.data
 
 import androidx.media3.common.Player
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import javax.inject.Inject
 
-class PlaybackStateObserver @Inject constructor(
-    player: Player,
-): Player.Listener {
+class SongEndedObserver @Inject constructor() {
 
-    init {
-        player.addListener(this)
-    }
-
-    private val _playerPlaybackStateFlow = MutableStateFlow(Player.STATE_IDLE)
-    val playerPlaybackStateFlow: StateFlow<Int> = _playerPlaybackStateFlow
-
-    override fun onPlaybackStateChanged(state: Int) {
-        super.onPlaybackStateChanged(state)
-        _playerPlaybackStateFlow.tryEmit(state)
+    fun observeAsFlow(player: Player): Flow<Unit> = callbackFlow {
+        val listener = object: Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                super.onPlaybackStateChanged(state)
+                if(state == Player.STATE_ENDED) {
+                    trySend(Unit)
+                }
+            }
+        }
+        player.addListener(listener)
+        awaitClose {
+            player.removeListener(listener)
+        }
     }
 }

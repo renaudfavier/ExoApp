@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.Player
 import com.deezer.exoapplication.player.data.MediaItemFactory
-import com.deezer.exoapplication.player.data.PlaybackStateObserver
+import com.deezer.exoapplication.player.data.SongEndedRepository
 import com.deezer.exoapplication.player.data.TrackFactory
 import com.deezer.exoapplication.player.domain.model.Track
 import com.deezer.exoapplication.player.domain.model.TrackId
@@ -14,7 +14,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
@@ -25,7 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     val player: Player,
-    playbackObserver: PlaybackStateObserver,
+    songEndedRepository: SongEndedRepository,
     private val trackFactory: TrackFactory,
     private val mediaItemFactory: MediaItemFactory,
 ) : ViewModel() {
@@ -38,12 +37,13 @@ class PlayerViewModel @Inject constructor(
     private val playlistFlow = MutableStateFlow<List<TrackId>>(emptyList())
     private val playlist get() = playlistFlow.value
 
-    private val playerPlaybackStateFlow = playbackObserver.playerPlaybackStateFlow
-
     init {
         player.prepare()
         playTrackOnSelectionChanged()
-        playNextTrackOnPlaybackEnded()
+        songEndedRepository
+            .observeSongEnded()
+            .onEach { playNextTrackInQueue() }
+            .launchIn(viewModelScope)
     }
 
     val uiState = playlistFlow
@@ -90,11 +90,6 @@ class PlayerViewModel @Inject constructor(
             player.setMediaItem(mediaItem)
             player.play()
         }.launchIn(viewModelScope)
-
-    private fun playNextTrackOnPlaybackEnded() = playerPlaybackStateFlow
-        .filter { it == Player.STATE_ENDED }
-        .onEach { playNextTrackInQueue() }
-        .launchIn(viewModelScope)
 
     private fun playNextTrackInQueue() {
         val selectedTrackIndex = playlist.indexOf(selectedTrackId)
