@@ -3,7 +3,7 @@ package com.deezer.exoapplication
 import android.app.Application
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.deezer.exoapplication.core.data.MetaDataReader
+import com.deezer.exoapplication.core.domain.MetaDataReader
 import com.deezer.exoapplication.core.data.MetadataReaderImpl
 import dagger.Module
 import dagger.Provides
