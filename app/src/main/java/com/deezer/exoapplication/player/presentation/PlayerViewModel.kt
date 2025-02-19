@@ -6,9 +6,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.Player
 import com.deezer.exoapplication.player.data.MediaItemFactory
 import com.deezer.exoapplication.player.data.SongEndedRepository
-import com.deezer.exoapplication.player.data.TrackFactory
 import com.deezer.exoapplication.player.domain.QueueManager
-import com.deezer.exoapplication.player.domain.model.Track
+import com.deezer.exoapplication.player.domain.TrackRepository
 import com.deezer.exoapplication.player.domain.model.TrackId
 import com.deezer.exoapplication.player.presentation.model.TrackUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,20 +24,20 @@ import javax.inject.Inject
 class PlayerViewModel @Inject constructor(
     val player: Player,
     private val songEndedRepository: SongEndedRepository,
-    private val trackFactory: TrackFactory,
+    private val trackRepository: TrackRepository,
     private val mediaItemFactory: MediaItemFactory,
     private val queueManager: QueueManager,
 ) : ViewModel() {
 
-    private val trackMap = mutableMapOf<TrackId, Track>()
-
     val uiState = queueManager.playlistFlow
         .combine(queueManager.selectedTrackIdFlow) { playlist, selectedTrackId ->
-            playlist.map { trackId ->
+            playlist.mapNotNull { trackId ->
+                trackRepository.getTrack(trackId).getOrNull()
+            }.map { track ->
                 TrackUiModel(
-                    id = trackId,
-                    title = trackMap[trackId]?.name ?: "No Name",
-                    isSelected = trackId == selectedTrackId
+                    id = track.id,
+                    title = track.name,
+                    isSelected = track.id == selectedTrackId
                 )
             }
         }
@@ -58,14 +57,14 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun onTrackRemoved(id: TrackId) = viewModelScope.launch {
-        trackMap.remove(id)
         queueManager.removeTrack(id)
     }
 
     fun onTrackAdded(uri: Uri) = viewModelScope.launch {
-        val track = trackFactory.createTrack(uri)
-        trackMap[track.id] = track
-        queueManager.addTrack(track.id)
+        trackRepository.addTrack(uri).fold(
+            onSuccess = { queueManager.addTrack(it) },
+            onFailure = { TODO() }
+        )
     }
 
     private fun reactOnSelectedTrackChanged() = queueManager
@@ -79,10 +78,14 @@ class PlayerViewModel @Inject constructor(
         }.launchIn(viewModelScope)
 
     private fun playTrack(trackId: TrackId) {
-        val track = trackMap[trackId] ?: return
-        val mediaItem = mediaItemFactory.createFromUri(track.uri)
-        player.setMediaItem(mediaItem)
-        player.play()
+        trackRepository.getTrack(trackId).fold(
+            onSuccess = {
+                val mediaItem = mediaItemFactory.createFromUri(it.uri)
+                player.setMediaItem(mediaItem)
+                player.play()
+            },
+            onFailure = { TODO() }
+        )
     }
 
     private fun playNextTrackOnSongEnded() = songEndedRepository

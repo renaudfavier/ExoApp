@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import app.cash.turbine.test
-import com.deezer.exoapplication.core.data.MetaDataReader
+import com.deezer.exoapplication.core.domain.MetaDataReader
 import com.deezer.exoapplication.core.domain.model.MetaData
 import com.deezer.exoapplication.player.data.MediaItemFactory
 import com.deezer.exoapplication.player.data.SongEndedRepository
