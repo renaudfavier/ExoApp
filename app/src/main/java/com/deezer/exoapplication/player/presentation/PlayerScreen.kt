@@ -43,7 +43,6 @@ import com.google.common.collect.ImmutableList
 @OptIn(UnstableApi::class)
 @Composable
 fun PlayerScreen(
-    player: Player?,
     uiModel: PlayerScreenUiModel,
     onPause: () -> Unit,
     onResume: () -> Unit,
@@ -52,19 +51,6 @@ fun PlayerScreen(
     onAddTrack: () -> Unit,
     modifier: Modifier = Modifier
 ) = Column(modifier) {
-
-    AndroidView(
-        factory = { context ->
-            PlayerView(context).also { playerView ->
-                playerView.player = player
-                playerView.useController = true
-                playerView.controllerShowTimeoutMs = -1
-            }
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.4f)
-    )
 
     Row(
         modifier = Modifier.fillMaxWidth().height(40.dp),
@@ -181,7 +167,6 @@ private fun PlayerScreenPreview() {
 
     ExoAppTheme {
         PlayerScreen(
-            player = null,
             uiModel = PlayerScreenUiModel(
                 isPlayButtonEnabled = false,
                 isPlaying = false,

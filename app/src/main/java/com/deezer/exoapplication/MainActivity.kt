@@ -27,8 +27,6 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject lateinit var player: Player
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -52,7 +50,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     PlayerScreen(
-                        player = player,
                         uiModel = uiModel,
                         onPause = viewModel::onPause,
                         onResume = viewModel::onResume,
