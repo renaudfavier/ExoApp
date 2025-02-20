@@ -17,20 +17,25 @@ import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.Player
 import com.deezer.exoapplication.player.presentation.PlayerScreen
 import com.deezer.exoapplication.player.presentation.PlayerViewModel
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var player: Player
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(this, arrayOf(POST_NOTIFICATIONS), 0)
         }
-        startService()
+        startServiceIfNeeded()
 
         enableEdgeToEdge()
         setContent {
@@ -47,7 +52,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     PlayerScreen(
-                        player = viewModel.player,
+                        player = player,
                         tracks = tracks,
                         onTrackSelected = { id -> viewModel.onTrackSelected(id) },
                         onTrackRemoved = { id -> viewModel.onTrackRemoved(id) },
@@ -63,7 +68,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startService() {
+    private fun startServiceIfNeeded() {
+        if(MyMediaPlaybackService.isServiceRunning) return
+        
         val intent = Intent(applicationContext, MyMediaPlaybackService::class.java)
         intent.action = MyMediaPlaybackService.Action.START.toString()
         startService(intent)
