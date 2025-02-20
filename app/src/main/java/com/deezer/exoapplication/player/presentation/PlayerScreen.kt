@@ -51,27 +51,6 @@ fun PlayerScreen(
     onAddTrack: () -> Unit,
     modifier: Modifier = Modifier
 ) = Column(modifier) {
-
-    Row(
-        modifier = Modifier.fillMaxWidth().height(40.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        if(uiModel.isPlaying) {
-            Button(
-                onClick = onPause,
-                enabled = uiModel.isPlayButtonEnabled
-            ) {
-                Text("Pause")
-            }
-        } else {
-            Button(
-                onClick = onResume,
-                enabled = uiModel.isPlayButtonEnabled
-            ) {
-                Text("Play")
-            }
-        }
-    }
     
     Box(modifier = Modifier
         .fillMaxWidth()
@@ -94,6 +73,27 @@ fun PlayerScreen(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Add",
             )
+        }
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().height(40.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        if(uiModel.isPlaying) {
+            Button(
+                onClick = onPause,
+                enabled = uiModel.isPlayButtonEnabled
+            ) {
+                Text("Pause")
+            }
+        } else {
+            Button(
+                onClick = onResume,
+                enabled = uiModel.isPlayButtonEnabled
+            ) {
+                Text("Play")
+            }
         }
     }
 }

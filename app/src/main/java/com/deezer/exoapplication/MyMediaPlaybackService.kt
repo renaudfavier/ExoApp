@@ -31,20 +31,13 @@ class MyMediaPlaybackService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
         when (intent?.action) {
             Action.START.toString() -> start()
-            Action.STOP.toString() -> {
-                player.release()
-                stopSelf()
-                isServiceRunning = false
-            }
+            Action.STOP.toString() -> stop()
         }
 
         return super.onStartCommand(intent, flags, startId)
     }
-
-
 
     private fun start() {
         player.prepare()
@@ -59,9 +52,9 @@ class MyMediaPlaybackService : Service() {
             notification,
         )
         isServiceRunning = true
+
         reactOnSelectedTrackChanged()
         playNextTrackOnSongEnded()
-
     }
 
     private fun reactOnSelectedTrackChanged() = queueManager
@@ -89,6 +82,12 @@ class MyMediaPlaybackService : Service() {
         .observeSongEnded()
         .onEach { queueManager.next() }
         .launchIn(serviceScope)
+
+    private fun stop() {
+        player.release()
+        stopSelf()
+        isServiceRunning = false
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
