@@ -7,7 +7,7 @@ import app.cash.turbine.test
 import com.deezer.exoapplication.core.domain.MetaDataReader
 import com.deezer.exoapplication.core.domain.model.MetaData
 import com.deezer.exoapplication.player.data.MediaItemFactory
-import com.deezer.exoapplication.player.data.SongEndedRepository
+import com.deezer.exoapplication.player.domain.SongEndedRepository
 import com.deezer.exoapplication.player.data.TrackFactory
 import io.mockk.every
 import io.mockk.mockk

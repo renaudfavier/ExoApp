@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.Player
 import com.deezer.exoapplication.player.data.MediaItemFactory
-import com.deezer.exoapplication.player.data.SongEndedRepository
 import com.deezer.exoapplication.player.domain.QueueManager
+import com.deezer.exoapplication.player.domain.SongEndedRepository
 import com.deezer.exoapplication.player.domain.TrackRepository
 import com.deezer.exoapplication.player.domain.model.TrackId
 import com.google.common.collect.ImmutableList
