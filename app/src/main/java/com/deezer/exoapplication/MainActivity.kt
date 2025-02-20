@@ -1,5 +1,8 @@
 package com.deezer.exoapplication
 
+import android.Manifest.permission.POST_NOTIFICATIONS
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.deezer.exoapplication.player.presentation.PlayerScreen
@@ -22,6 +26,12 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(this, arrayOf(POST_NOTIFICATIONS), 0)
+        }
+        startService()
+
         enableEdgeToEdge()
         setContent {
             ExoAppTheme {
@@ -51,5 +61,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun startService() {
+        val intent = Intent(applicationContext, MyMediaPlaybackService::class.java)
+        intent.action = MyMediaPlaybackService.Action.START.toString()
+        startService(intent)
     }
 }
