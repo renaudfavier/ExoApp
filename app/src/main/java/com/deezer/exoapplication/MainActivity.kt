@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
 
                     val viewModel = hiltViewModel<PlayerViewModel>()
-                    val tracks by viewModel.uiState.collectAsStateWithLifecycle()
+                    val uiModel by viewModel.uiState.collectAsStateWithLifecycle()
 
                     val singleAudioFilePickerLauncher = rememberLauncherForActivityResult(
                         contract = ActivityResultContracts.GetContent(),
@@ -53,9 +53,11 @@ class MainActivity : ComponentActivity() {
 
                     PlayerScreen(
                         player = player,
-                        tracks = tracks,
-                        onTrackSelected = { id -> viewModel.onTrackSelected(id) },
-                        onTrackRemoved = { id -> viewModel.onTrackRemoved(id) },
+                        uiModel = uiModel,
+                        onPause = viewModel::onPause,
+                        onResume = viewModel::onResume,
+                        onTrackSelected = viewModel::onTrackSelected,
+                        onTrackRemoved = viewModel::onTrackRemoved,
                         onAddTrack = {
                             singleAudioFilePickerLauncher.launch(input = "audio/*")
                         },
