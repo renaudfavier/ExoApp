@@ -19,11 +19,10 @@ class QueueManager @Inject constructor() {
     private val playlist get() = playlistFlow.value
 
     suspend fun next() = withContext(Dispatchers.Main) {
-        val selectedTrackIndex = playlist.indexOf(selectedTrackId)
-        if (selectedTrackIndex == playlist.lastIndex) {
-            _selectedTrackIdFlow.update { null }
-        } else {
-            _selectedTrackIdFlow.update { playlist[selectedTrackIndex + 1] }
+        when(val selectedTrackIndex = playlist.indexOf(selectedTrackId)) {
+            -1 -> Unit
+            playlist.lastIndex -> _selectedTrackIdFlow.update { null }
+            else -> _selectedTrackIdFlow.update { playlist[selectedTrackIndex + 1] }
         }
     }
 
