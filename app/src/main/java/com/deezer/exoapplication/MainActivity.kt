@@ -2,6 +2,7 @@ package com.deezer.exoapplication
 
 import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,6 +13,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
@@ -30,11 +33,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ActivityCompat.requestPermissions(this, arrayOf(POST_NOTIFICATIONS), 0)
-        }
-        startServiceIfNeeded()
-
         enableEdgeToEdge()
         setContent {
             ExoAppTheme {
@@ -43,10 +41,13 @@ class MainActivity : ComponentActivity() {
                     val viewModel = hiltViewModel<PlayerViewModel>()
                     val uiModel by viewModel.uiState.collectAsStateWithLifecycle()
 
-                    val singleAudioFilePickerLauncher = rememberLauncherForActivityResult(
-                        contract = ActivityResultContracts.GetContent(),
-                    ) { uri ->
-                        uri?.let { viewModel.onTrackAdded(uri) }
+                    val audioFilePickerLauncher = audioFilePickerLauncher { viewModel.onTrackAdded(it) }
+                    val permission = notificationPermissionPickerLauncher()
+
+                    LaunchedEffect(Unit) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            permission.launch(POST_NOTIFICATIONS)
+                        }
                     }
 
                     PlayerScreen(
@@ -56,7 +57,7 @@ class MainActivity : ComponentActivity() {
                         onTrackSelected = viewModel::onTrackSelected,
                         onTrackRemoved = viewModel::onTrackRemoved,
                         onAddTrack = {
-                            singleAudioFilePickerLauncher.launch(input = "audio/*")
+                            audioFilePickerLauncher.launch(input = "audio/*")
                         },
                         modifier = Modifier
                             .fillMaxSize()
@@ -66,6 +67,27 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    @Composable
+    private fun audioFilePickerLauncher(onResult: (Uri) -> Unit) =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri ->
+            uri?.let { onResult(uri) }
+        }
+
+
+    @Composable
+    private fun notificationPermissionPickerLauncher() = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (!isGranted) {
+                finish()
+            } else {
+                startServiceIfNeeded()
+            }
+        }
+    )
 
     private fun startServiceIfNeeded() {
         if(MyMediaPlaybackService.isServiceRunning) return

@@ -1,12 +1,6 @@
 
 # Basic Exo Player app
 
-Important Note : I didn't code a clean flow for asking permissions, so the app will crash the first time to solve the issue
-
-- comment `startServiceIfNeeded()` line 36 in `MainActivity.kt`
-- run the app once and accept permissions
-- uncomment the line and run the app again
-
 This project is a small Android application designed to demonstrate a media player queue feature. It provides basic queue management using **StateFlow** for reactive UI updates.
 
 Note : I'm fully aware this is quite over engineered for a simple project like this, and I might have given a stick to beat me with. But I figured going the extra mile would demonstrate my motivation and give material to chat. 
