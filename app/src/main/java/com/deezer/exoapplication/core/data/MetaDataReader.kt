@@ -3,12 +3,9 @@ package com.deezer.exoapplication.core.data
 import android.app.Application
 import android.net.Uri
 import android.provider.MediaStore
+import com.deezer.exoapplication.core.domain.MetaDataReader
 import com.deezer.exoapplication.core.domain.model.MetaData
 import javax.inject.Inject
-
-interface MetaDataReader {
-    fun getMetaDataFromUri(contentUri: Uri): MetaData?
-}
 
 class MetadataReaderImpl @Inject constructor(
     private val app: Application

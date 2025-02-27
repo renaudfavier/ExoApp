@@ -1,8 +1,6 @@
 package com.deezer.exoapplication.player.domain.model
 
-import java.util.UUID
-
-typealias TrackId = UUID
+typealias TrackId = String
 
 data class Track(
     val id: TrackId,
