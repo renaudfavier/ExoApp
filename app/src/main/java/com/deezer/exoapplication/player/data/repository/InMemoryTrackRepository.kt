@@ -1,7 +1,8 @@
-package com.deezer.exoapplication.player.data
+package com.deezer.exoapplication.player.data.repository
 
 import android.net.Uri
-import com.deezer.exoapplication.player.domain.TrackRepository
+import com.deezer.exoapplication.player.data.TrackFactory
+import com.deezer.exoapplication.player.domain.repository.TrackRepository
 import com.deezer.exoapplication.player.domain.model.Track
 import com.deezer.exoapplication.player.domain.model.TrackId
 import javax.inject.Inject

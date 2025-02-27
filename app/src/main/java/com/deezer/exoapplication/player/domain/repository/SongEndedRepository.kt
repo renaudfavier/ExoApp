@@ -1,4 +1,4 @@
-package com.deezer.exoapplication.player.domain
+package com.deezer.exoapplication.player.domain.repository
 
 import kotlinx.coroutines.flow.Flow
 
