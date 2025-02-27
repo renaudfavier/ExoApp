@@ -1,6 +1,8 @@
 package com.deezer.exoapplication.player.di
 
 import com.deezer.exoapplication.player.data.InMemoryTrackRepository
+import com.deezer.exoapplication.player.domain.IsPlayingRepository
+import com.deezer.exoapplication.player.data.IsPlayingRepositoryImpl
 import com.deezer.exoapplication.player.data.SongEndedRepositoryImpl
 import com.deezer.exoapplication.player.domain.SongEndedRepository
 import com.deezer.exoapplication.player.domain.QueueManager
@@ -23,6 +25,10 @@ interface PlayerModule {
     @Singleton
     @Binds
     fun bindSongRepository(impl: SongEndedRepositoryImpl): SongEndedRepository
+
+    @Singleton
+    @Binds
+    fun bindSongRepository(impl: IsPlayingRepositoryImpl): IsPlayingRepository
 
     companion object {
         @Provides

@@ -6,15 +6,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import javax.inject.Inject
 
-class SongEndedObserver @Inject constructor() {
-
-    fun observeAsFlow(player: Player): Flow<Unit> = callbackFlow {
+class IsPlayingDataSource @Inject constructor(
+    private val player: Player
+) {
+    fun getIsPlayingFlow(): Flow<Boolean> = callbackFlow {
+        trySend(player.isPlaying)
         val listener = object: Player.Listener {
-            override fun onPlaybackStateChanged(state: Int) {
-                super.onPlaybackStateChanged(state)
-                if(state == Player.STATE_ENDED) {
-                    trySend(Unit)
-                }
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                super.onIsPlayingChanged(isPlaying)
+                trySend(isPlaying)
             }
         }
         player.addListener(listener)
