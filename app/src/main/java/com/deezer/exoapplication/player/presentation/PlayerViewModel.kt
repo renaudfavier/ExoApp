@@ -3,35 +3,36 @@ package com.deezer.exoapplication.player.presentation
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.Player
+import com.deezer.exoapplication.player.data.MediaPlayer
 import com.deezer.exoapplication.player.domain.QueueManager
-import com.deezer.exoapplication.player.domain.TrackRepository
 import com.deezer.exoapplication.player.domain.model.TrackId
+import com.deezer.exoapplication.player.domain.repository.IsPlayingRepository
+import com.deezer.exoapplication.player.domain.repository.TrackRepository
 import com.deezer.exoapplication.player.presentation.model.PlayerScreenUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    val player: Player,
+    private val mediaPlayer: MediaPlayer,
+    isPlayingRepository: IsPlayingRepository,
     private val trackRepository: TrackRepository,
     private val queueManager: QueueManager,
     private val mapper: TrackUiMapper,
 ) : ViewModel() {
 
-    private val isPlayingListener = IsPlayingListener()
-    private val isPlayerPlaying = MutableStateFlow(player.isPlaying)
-
-    init {
-        player.addListener(isPlayingListener)
-    }
+    private val isPlayerPlaying = isPlayingRepository
+        .observeIsPlaying()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            false
+        )
 
     val uiState = queueManager.playlistFlow
         .map { playlist ->
@@ -64,24 +65,10 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun onPause() = viewModelScope.launch {
-        player.pause()
+        mediaPlayer.pause()
     }
 
     fun onResume() = viewModelScope.launch {
-        player.play()
-    }
-
-    override fun onCleared() {
-        player.removeListener(isPlayingListener)
-        super.onCleared()
-    }
-
-    inner class IsPlayingListener: Player.Listener {
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            super.onIsPlayingChanged(isPlaying)
-            viewModelScope.launch {
-                isPlayerPlaying.update { isPlaying }
-            }
-        }
+        mediaPlayer.play()
     }
 }

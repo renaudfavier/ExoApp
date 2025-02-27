@@ -4,12 +4,12 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import androidx.media3.common.Player
 import com.deezer.exoapplication.player.data.MediaItemFactory
+import com.deezer.exoapplication.player.data.MediaPlayer
 import com.deezer.exoapplication.player.domain.QueueManager
-import com.deezer.exoapplication.player.domain.SongEndedRepository
-import com.deezer.exoapplication.player.domain.TrackRepository
 import com.deezer.exoapplication.player.domain.model.TrackId
+import com.deezer.exoapplication.player.domain.repository.SongEndedRepository
+import com.deezer.exoapplication.player.domain.repository.TrackRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,7 +22,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MyMediaPlaybackService : Service() {
 
-    @Inject lateinit var player: Player
+    @Inject lateinit var player: MediaPlayer
     @Inject lateinit var queueManager: QueueManager
     @Inject lateinit var songEndedRepository: SongEndedRepository
     @Inject lateinit var trackRepository: TrackRepository
@@ -40,7 +40,6 @@ class MyMediaPlaybackService : Service() {
     }
 
     private fun start() {
-        player.prepare()
         val notification = NotificationCompat
             .Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -61,7 +60,7 @@ class MyMediaPlaybackService : Service() {
         .selectedTrackIdFlow
         .onEach { trackId ->
             if(trackId == null) {
-                player.clearMediaItems()
+                player.stop()
             } else {
                 playTrack(trackId)
             }
@@ -70,9 +69,7 @@ class MyMediaPlaybackService : Service() {
     private fun playTrack(trackId: TrackId) {
         trackRepository.getTrack(trackId).fold(
             onSuccess = {
-                val mediaItem = mediaItemFactory.createFromUri(it.uri)
-                player.setMediaItem(mediaItem)
-                player.play()
+                player.play(it)
             },
             onFailure = { TODO() }
         )

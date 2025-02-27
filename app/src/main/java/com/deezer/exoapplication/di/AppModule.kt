@@ -1,4 +1,4 @@
-package com.deezer.exoapplication
+package com.deezer.exoapplication.di
 
 import android.app.Application
 import androidx.media3.common.Player
